@@ -1,1 +1,67 @@
 Design doc for Micro-kernel project describing decisions, challenges, and tradeoffs faced
+
+ISA (Instruction Set Architecture):
+
+For this project I chose 32-bit RISC-V for the ISA.
+I chose 32-bit over 64-bit as its simplier to read.
+I chose RISC-V over ARM or x86 as its simplier, and has lots of use in embedded devices, 
+and thats where my interests lie as a firmware engineer.
+
+Common RISC-V Registers:
+Register	ABI Name (alias)	Description
+pc	        pc	                Program counter (where the next instruction is)
+x0	        zero	            Hardwired zero (always reads as zero)
+x1	        ra	                Return address
+x2	        sp	                Stack pointer
+x5 - x7	    t0 - t2	            Temporary registers
+x8	        fp	                Stack frame pointer
+x10 - x11	a0 - a1	            Function arguments/return values
+x12 - x17	a2 - a7	            Function arguments
+x18 - x27	s0 - s11	        Temporary registers saved across calls
+x28 - x31	t3 - t6	            Temporary registers
+
+CPU modes:
+Mode	Overview
+M-mode	Mode in which OpenSBI (i.e. BIOS) operates
+S-mode	Mode in which the kernel operates, aka. "kernel mode"
+U-mode	Mode in which applications operate, aka. "user mode"
+
+Privileged instructions:
+Opcode and operands	    Overview	                            Pseudocode
+csrr rd, csr	        Read from CSR                           rd = csr;
+csrw csr, rs	        Write to CSR	                        csr = rs;
+csrrw rd, csr, rs	    Read from and write to CSR at once	    tmp = csr; csr = rs; rd = tmp;
+sret	                Return from trap handler	
+sfence.vma	            Clear Translation Lookaside Buffer (TLB)
+
+Micro-Kernel Features:
+Finished:
+-Nothing yet
+
+TODO:
+Multitasking: Switch between processes to allow multiple applications to share the CPU
+Exception handler: Handle events requiring OS intervention, such as illegal instructions
+Paging: Provide an isolated memory address space for each application
+System calls: Allow applications to call kernel features
+Device drivers: Abstract hardware functionalities, such as disk read/write
+File system: Manage files on disk
+Command-line shell: User interface for humans
+
+Potential TO-DO:
+Interrupt handling: Instead, we will use a polling method (periodically check for new data on devices), also known as busy waiting
+Timer processing: Preemptive multitasking is not implemented. We'll use cooperative multitasking, where each process voluntarily yields the CPU
+Inter-process communication: Features such as pipe, UNIX domain socket, and shared memory are not implemented
+Multi-processor support: Only single processor is supported
+
+Source code structure:
+├── disk/     - File system contents
+├── common.c  - Kernel/user common library: printf, memset, ...
+├── common.h  - Kernel/user common library: definitions of structs and constants
+├── kernel.c  - Kernel: process management, system calls, device drivers, file system
+├── kernel.h  - Kernel: definitions of structs and constants
+├── kernel.ld - Kernel: linker script (memory layout definition)
+├── shell.c   - Command-line shell
+├── user.c    - User library: functions for system calls
+├── user.h    - User library: definitions of structs and constants
+├── user.ld   - User: linker script (memory layout definition)
+└── run.sh    - Build script
