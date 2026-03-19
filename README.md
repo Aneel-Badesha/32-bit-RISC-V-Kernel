@@ -1,10 +1,8 @@
-# Microkernel
-
-A microkernel written in C targeting 32-bit RISC-V, aimed at embedded systems.
+# 32-bit RISC-V Kernel
 
 ## Overview
 
-This project implements a microkernel from scratch on 32-bit RISC-V (RV32). The ISA was chosen for its simplicity and widespread use in embedded/firmware development.
+This project implements a Kernel from scratch on 32-bit RISC-V (RV32). The ISA was chosen for its simplicity and widespread use in embedded/firmware development.
 
 ## Platform
 
