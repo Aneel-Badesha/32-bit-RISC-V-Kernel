@@ -71,3 +71,11 @@ File Sections:
 .rodata	This section contains constant data that is read-only.
 .data	This section contains read/write data.
 .bss	This section contains read/write data with an initial value of zero.
+
+3 Privilege Levels:
+Machine Mode    (M-mode): The highest privilege level, where code has unrestricted access to all hardware resources (memory, registers, etc.).
+                          It is responsible for booting, handling low-level exceptions, and is mandatory on all RISC-V harts.
+Supervisor Mode (S-mode): Designed for modern operating systems, providing privilege separation between the operating system kernel and applications.
+                          It is supported in systems running systems like Linux.
+User Mode       (U-mode): The lowest privilege level for running application code.
+                          Code in U-mode has restricted access to hardware, protecting the system from accidental or malicious interference.
