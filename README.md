@@ -1,47 +1,34 @@
 # 32-bit RISC-V Kernel
 
-## Overview
-
-This project implements a Kernel from scratch on 32-bit RISC-V (RV32). The ISA was chosen for its simplicity and widespread use in embedded/firmware development.
-
-## Platform
-
-- **ISA:** 32-bit RISC-V (RV32)
-- **CPU Modes:** M-mode (OpenSBI/BIOS), S-mode (kernel), U-mode (user applications)
-- **Multitasking:** Cooperative (processes voluntarily yield the CPU)
-- **Memory model:** Single processor, polling-based I/O (no interrupt-driven I/O)
+A kernel built from scratch targeting 32-bit RISC-V (RV32). Runs in S-mode under OpenSBI, with cooperative multitasking and polling-based I/O.
 
 ## Features
 
-**Planned:**
-- [ ] Multitasking — switch between processes to share the CPU
-- [ ] Exception handler — handle events requiring OS intervention
-- [ ] Paging — isolated memory address space per application
-- [ ] System calls — allow applications to invoke kernel features
-- [ ] Device drivers — abstract hardware (disk read/write, etc.)
-- [ ] File system — manage files on disk
-- [ ] Command-line shell — user interface
-
-**Potential Features**
-- [ ] Interrupt handling — replace polling-based I/O with interrupt-driven I/O
-- [ ] Timer processing — enable preemptive multitasking via hardware timer interrupts
-- [ ] Inter-process communication — pipe, UNIX domain socket, and shared memory
-- [ ] Multi-processor support — run the kernel across multiple CPU cores (SMP)
+- [ ] Multitasking
+- [ ] Exception handler
+- [ ] Paging
+- [ ] System calls
+- [ ] Device drivers
+- [ ] File system
+- [ ] Shell
 
 ## Source Structure
 
 ```
-├── disk/      - File system contents
-├── common.c   - Kernel/user common library (printf, memset, ...)
-├── common.h   - Kernel/user common library (struct and constant definitions)
-├── kernel.c   - Kernel: process management, system calls, device drivers, file system
-├── kernel.h   - Kernel: struct and constant definitions
-├── kernel.ld  - Kernel linker script (memory layout)
-├── shell.c    - Command-line shell
-├── user.c     - User library: system call wrappers
-├── user.h     - User library: struct and constant definitions
-├── user.ld    - User linker script (memory layout)
-└── run.sh     - Build script
+common.c / .h  - Shared library (printf, memset, ...)
+kernel.c / .h  - Kernel core (processes, syscalls, drivers, fs)
+kernel.ld      - Kernel linker script
+shell.c        - Command-line shell
+user.c / .h    - User-space library and syscall wrappers
+user.ld        - User linker script
+run.sh         - Build + run script
+disk/          - File system contents
+```
+
+## Prerequisites
+
+```sh
+sudo apt install clang lld qemu-system-misc
 ```
 
 ## Building & Running
@@ -50,12 +37,37 @@ This project implements a Kernel from scratch on 32-bit RISC-V (RV32). The ISA w
 ./run.sh
 ```
 
-## Formatting
+Builds `kernel.elf` and launches it in QEMU. To exit, press `Ctrl-A X`.
 
-Uses `clang-format` (v19, LLVM-based style). To format all source files:
+## OpenSBI
+
+QEMU uses `-bios default` which loads a bundled OpenSBI automatically. To use a custom build:
+
+**Install pre-built:**
+```sh
+sudo apt install opensbi
+```
+
+**Build from source (RV32):**
+```sh
+git clone https://github.com/riscv-software-src/opensbi.git
+cd opensbi
+make PLATFORM=generic CROSS_COMPILE=riscv32-unknown-elf- PLATFORM_RISCV_XLEN=32
+```
+
+Firmware blobs are output to `build/platform/generic/firmware/`. Use `fw_jump.bin` for development:
+
+```sh
+qemu-system-riscv32 -machine virt \
+    -bios opensbi/build/platform/generic/firmware/fw_jump.bin \
+    -nographic -serial mon:stdio --no-reboot \
+    -kernel kernel.elf
+```
+
+## Formatting
 
 ```sh
 clang-format -i *.c *.h
 ```
 
-Config is in [.clang-format](.clang-format).
+Config: [.clang-format](.clang-format)
