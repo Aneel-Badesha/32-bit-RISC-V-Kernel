@@ -7,6 +7,31 @@ I chose 32-bit over 64-bit as its simplier to read.
 I chose RISC-V over ARM or x86 as its simplier, and has lots of use in embedded devices, 
 and thats where my interests lie as a firmware engineer.
 
+Micro-Kernel Features:
+Implemented:
+- RV32 kernel boot path in S-mode under OpenSBI.
+- Console output through SBI calls (`putchar` via `ecall`).
+- `.bss` zeroing during early boot.
+- Basic common library routines: `memset`, `memcpy`, `strcpy`, `strcmp`.
+- Minimal `printf` support for `%d`, `%x`, `%s`, and `%%`.
+- Trap entry/exit path (`kernel_entry`) that saves/restores general-purpose registers and returns with `sret`.
+- Trap frame definition and panic-based trap handling (`handle_trap`).
+- Early physical page allocator (`alloc_pages`) using linker-defined free RAM region.
+- Linker-defined memory layout with kernel image, stack, and free RAM region.
+- Build and run flow through `run.sh` using clang/lld and QEMU.
+
+Not Yet Implemented:
+- Scheduler and multitasking/process switching.
+- Running user programs in U-mode.
+- User-space support library and linker script (`user.c`, `user.h`, `user.ld` are currently empty).
+- System call ABI and syscall dispatching.
+- Structured exception/interrupt handling (currently unexpected traps panic).
+- Timer interrupts and preemption.
+- Virtual memory and paging (`satp`, page tables, `sfence.vma`).
+- Device drivers beyond SBI console output.
+- File system implementation and use of `disk/` contents.
+- Interactive shell (`shell.c` is currently empty).
+
 Common RISC-V Registers:
 Register	ABI Name (alias)	Description
 pc	        pc	                Program counter (where the next instruction is)
@@ -33,10 +58,6 @@ csrw csr, rs	        Write to CSR	                        csr = rs;
 csrrw rd, csr, rs	    Read from and write to CSR at once	    tmp = csr; csr = rs; rd = tmp;
 sret	                Return from trap handler	
 sfence.vma	            Clear Translation Lookaside Buffer (TLB)
-
-Micro-Kernel Features:
-Finished:
--Nothing yet
 
 Source code structure:
 ├── disk/     - File system contents
@@ -65,4 +86,4 @@ Supervisor Mode (S-mode): Designed for modern operating systems, providing privi
 User Mode       (U-mode): The lowest privilege level for running application code.
                           Code in U-mode has restricted access to hardware, protecting the system from accidental or malicious interference.
 
-Custom printf supports %d (decimal), %x (hexadecimal), and %s (string)
+Current `printf` support: `%d` (decimal), `%x` (hexadecimal), `%s` (string), and `%%`.

@@ -1,14 +1,24 @@
 # 32-bit RISC-V Kernel
 
-A kernel built from scratch targeting 32-bit RISC-V (RV32). Runs in S-mode under OpenSBI, with cooperative multitasking and polling-based I/O.
+A kernel built from scratch targeting 32-bit RISC-V (RV32). Runs in S-mode under OpenSBI, with early trap handling, page allocation, and polling-based SBI console I/O.
 
 ## Features
 
-- [ ] Multitasking
-- [ ] Exception handler
-- [ ] Paging
+- [x] Boots RV32 kernel in S-mode under OpenSBI
+- [x] SBI console output (`putchar`)
+- [x] Common runtime helpers (`memset`, `memcpy`, `strcpy`, `strcmp`)
+- [x] Minimal `printf` (`%d`, `%x`, `%s`, `%%`)
+- [x] Trap entry/exit path with register save/restore (`kernel_entry`)
+- [x] Basic trap handling (`handle_trap`, panic on unexpected trap)
+- [x] Early page allocator (`alloc_pages`)
+- [x] Linker-defined kernel memory layout (BSS, stack, free RAM)
+- [ ] Multitasking/scheduler
+- [ ] User-mode programs (U-mode)
 - [ ] System calls
-- [ ] Device drivers
+- [ ] Full exception/interrupt handling
+- [ ] Timer interrupts/preemption
+- [ ] Paging
+- [ ] Device drivers (beyond SBI console)
 - [ ] File system
 - [ ] Shell
 
