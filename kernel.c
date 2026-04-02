@@ -47,7 +47,7 @@ void kernel_main(void)
     // set the bss section to 0
     memset(__bss, 0, (size_t)__bss_end - (size_t)__bss);
 
-    // print Hellow World
+    // print Hello World
     printf("\n\nHello %s\n", "World!");
     printf("1 + 2 = %d, %x\n", 1 + 2, 0x1234abcd);
 
