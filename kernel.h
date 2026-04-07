@@ -1,6 +1,19 @@
 #pragma once
 #include "common.h"
 
+#define PROCS_MAX 8               // Maximum number of processes
+#define PROC_UNUSED 0             // Unused process control structure
+#define PROC_RUNNABLE 1           // Runnable process
+#define MAX_STACK_SIZE (1U << 13) // 8192 bits
+
+struct process {
+    int pid;                       // Process ID
+    int state;                     // Process state: PROC_UNUSED or PROC_RUNNABLE
+    vaddr_t sp;                    // Stack pointer
+    uint32_t *page_table;          // Page table
+    uint8_t stack[MAX_STACK_SIZE]; // Kernel stack
+};
+
 struct sbiret {
     long error;
     long value;
