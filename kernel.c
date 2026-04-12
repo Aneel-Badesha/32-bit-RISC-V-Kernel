@@ -1,13 +1,6 @@
 #include "kernel.h"
 #include "common.h"
 
-#define SATP_SV32 (1u << 31)
-#define PAGE_V (1 << 0) // "Valid" bit (entry is enabled)
-#define PAGE_R (1 << 1) // Readable
-#define PAGE_W (1 << 2) // Writable
-#define PAGE_X (1 << 3) // Executable
-#define PAGE_U (1 << 4) // User (accessible in user mode)
-
 typedef unsigned char uint8_t;
 typedef unsigned int uint32_t;
 typedef uint32_t size_t;
@@ -322,7 +315,6 @@ void kernel_main(void)
 
     proc_a = create_process((uint32_t)proc_a_entry);
     proc_b = create_process((uint32_t)proc_b_entry);
-    proc_a_entry();
 
     yield();
     PANIC("switched to idle process");
