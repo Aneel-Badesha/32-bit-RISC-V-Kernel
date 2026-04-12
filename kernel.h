@@ -1,9 +1,11 @@
 #pragma once
 #include "common.h"
 
-#define PROCS_MAX 8               // Maximum number of processes
-#define PROC_UNUSED 0             // Unused process control structure
-#define PROC_RUNNABLE 1           // Runnable process
+#define PROCS_MAX 8     // Maximum number of processes
+#define PROC_UNUSED 0   // Unused process control structure
+#define PROC_RUNNABLE 1 // Runnable process
+#define PROC_EXITED 2   // Exit process
+
 #define MAX_STACK_SIZE (1U << 13) // 8192 bits
 
 #define SATP_SV32 (1u << 31)
@@ -15,6 +17,7 @@
 
 #define USER_BASE 0x1000000 // The base virtual address of an application image
 #define SSTATUS_SPIE (1 << 5)
+#define SCAUSE_ECALL 8
 
 struct process {
     int pid;                       // Process ID
