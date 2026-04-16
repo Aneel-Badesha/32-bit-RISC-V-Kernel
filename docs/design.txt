@@ -4,33 +4,56 @@ ISA (Instruction Set Architecture):
 
 For this project I chose 32-bit RISC-V for the ISA.
 I chose 32-bit over 64-bit as its simplier to read.
-I chose RISC-V over ARM or x86 as its simplier, and has lots of use in embedded devices, 
+I chose RISC-V over ARM or x86 as its simplier, and has lots of use in embedded devices,
 and thats where my interests lie as a firmware engineer.
 
 Micro-Kernel Features:
 Implemented:
 - RV32 kernel boot path in S-mode under OpenSBI.
-- Console output through SBI calls (`putchar` via `ecall`).
+- Console I/O through SBI calls (`putchar`, `getchar` via `ecall`).
 - `.bss` zeroing during early boot.
 - Basic common library routines: `memset`, `memcpy`, `strcpy`, `strcmp`.
 - Minimal `printf` support for `%d`, `%x`, `%s`, and `%%`.
-- Trap entry/exit path (`kernel_entry`) that saves/restores general-purpose registers and returns with `sret`.
-- Trap frame definition and panic-based trap handling (`handle_trap`).
+- Trap entry/exit path (`kernel_entry`) that saves/restores all general-purpose registers and returns with `sret`.
+- Trap frame definition and syscall dispatch (`handle_trap`, `handle_syscall`).
+- System call ABI: SYS_EXIT, SYS_PUTCHAR, SYS_GETCHAR, SYS_READFILE, SYS_WRITEFILE.
 - Early physical page allocator (`alloc_pages`) using linker-defined free RAM region.
-- Linker-defined memory layout with kernel image, stack, and free RAM region.
-- Build and run flow through `run.sh` using clang/lld and QEMU.
+- SV32 two-level page table mapping (`map_page`).
+- Process control structure, round-robin scheduler, and context switching (`create_process`, `yield`, `switch_context`).
+- User-mode execution: processes launched via `sret` into U-mode at USER_BASE (0x1000000).
+- Per-process page tables with kernel memory mapped 1:1 and user image mapped at USER_BASE.
+- Virtio-blk device driver: virtqueue initialization, descriptor chain construction, polling completion.
+- TAR-based in-memory filesystem with read and write persistence to virtio-blk disk.
+- Interactive command-line shell running in user mode (hello, readfile, writefile, exit).
+- Build and run flow through `run.sh` using clang/lld and QEMU; all artifacts go to `build/`.
 
 Not Yet Implemented:
-- Scheduler and multitasking/process switching.
-- Running user programs in U-mode.
-- User-space support library and linker script (`user.c`, `user.h`, `user.ld` are currently empty).
-- System call ABI and syscall dispatching.
-- Structured exception/interrupt handling (currently unexpected traps panic).
-- Timer interrupts and preemption.
-- Virtual memory and paging (`satp`, page tables, `sfence.vma`).
-- Device drivers beyond SBI console output.
-- File system implementation and use of `disk/` contents.
-- Interactive shell (`shell.c` is currently empty).
+- Timer interrupts and preemption (currently cooperative scheduling only).
+- Inter-process communication.
+- Dynamic process creation from user space.
+- Interrupt-driven I/O (currently polling-based for both console and disk).
+- Page reclamation, demand paging, or swap.
+- Multi-core support.
+
+Source code structure:
+├── build/         - All build artifacts (*.elf, *.bin, *.map, disk.tar, qemu.log)
+├── disk/          - Filesystem contents (packed into build/disk.tar at build time)
+├── docs/          - Design notes and reference material
+├── common.c       - Kernel/user shared library: printf, memset, memcpy, strcpy, strcmp
+├── common.h       - Kernel/user shared library: types, PAGE_SIZE, syscall numbers
+├── kernel.h       - Kernel: cross-cutting types (process, trap_frame), PANIC/CSR macros
+├── kernel.ld      - Kernel: linker script (memory layout)
+├── sbi.c / .h     - SBI console interface: sbi_call, putchar, getchar
+├── mm.c / .h      - Memory management: alloc_pages, map_page (SV32 paging)
+├── trap.c / .h    - Trap handling: kernel_entry (asm), handle_trap, handle_syscall
+├── proc.c / .h    - Process management: create_process, yield, switch_context
+├── virtio.c / .h  - Virtio-blk driver: virtio_blk_init, read_write_disk
+├── fs.c / .h      - Filesystem: fs_init, fs_lookup, fs_flush (TAR format)
+├── main.c         - Kernel entry point: kernel_main, boot
+├── shell.c        - User-space interactive shell
+├── user.c / .h    - User-space syscall wrappers
+├── user.ld        - User: linker script
+└── run.sh         - Build script
 
 Common RISC-V Registers:
 Register	ABI Name (alias)	Description
@@ -56,21 +79,8 @@ Opcode and operands	    Overview	                            Pseudocode
 csrr rd, csr	        Read from CSR                           rd = csr;
 csrw csr, rs	        Write to CSR	                        csr = rs;
 csrrw rd, csr, rs	    Read from and write to CSR at once	    tmp = csr; csr = rs; rd = tmp;
-sret	                Return from trap handler	
+sret	                Return from trap handler
 sfence.vma	            Clear Translation Lookaside Buffer (TLB)
-
-Source code structure:
-├── disk/     - File system contents
-├── common.c  - Kernel/user common library: printf, memset, ...
-├── common.h  - Kernel/user common library: definitions of structs and constants
-├── kernel.c  - Kernel: process management, system calls, device drivers, file system
-├── kernel.h  - Kernel: definitions of structs and constants
-├── kernel.ld - Kernel: linker script (memory layout definition)
-├── shell.c   - Command-line shell
-├── user.c    - User library: functions for system calls
-├── user.h    - User library: definitions of structs and constants
-├── user.ld   - User: linker script (memory layout definition)
-└── run.sh    - Build script
 
 File Sections:
 .text	This section contains the code of the program.

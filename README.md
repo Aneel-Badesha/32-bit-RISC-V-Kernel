@@ -1,38 +1,50 @@
 # 32-bit RISC-V Kernel
 
-A kernel built from scratch targeting 32-bit RISC-V (RV32). Runs in S-mode under OpenSBI, with early trap handling, page allocation, and polling-based SBI console I/O.
+A kernel built from scratch targeting 32-bit RISC-V (RV32). Runs in S-mode under OpenSBI, with multitasking, virtual memory, system calls, a virtio block driver, a TAR-based filesystem, and an interactive shell.
 
 ## Features
 
 - [x] Boots RV32 kernel in S-mode under OpenSBI
-- [x] SBI console output (`putchar`)
-- [x] Common runtime helpers (`memset`, `memcpy`, `strcpy`, `strcmp`)
-- [x] Minimal `printf` (`%d`, `%x`, `%s`, `%%`)
-- [x] Trap entry/exit path with register save/restore (`kernel_entry`)
-- [x] Basic trap handling (`handle_trap`, panic on unexpected trap)
-- [x] Early page allocator (`alloc_pages`)
-- [x] Linker-defined kernel memory layout (BSS, stack, free RAM)
-- [ ] Multitasking/scheduler
-- [ ] User-mode programs (U-mode)
-- [ ] System calls
-- [ ] Full exception/interrupt handling
-- [ ] Timer interrupts/preemption
-- [ ] Paging
-- [ ] Device drivers (beyond SBI console)
-- [ ] File system
-- [ ] Shell
+- [x] SBI console I/O (`putchar`, `getchar`)
+- [x] Common runtime helpers (`memset`, `memcpy`, `strcpy`, `strcmp`, `printf`)
+- [x] Trap entry/exit with full register save/restore (`kernel_entry`)
+- [x] System calls: `exit`, `putchar`, `getchar`, `readfile`, `writefile`
+- [x] Early physical page allocator (`alloc_pages`)
+- [x] SV32 two-level paging (`map_page`)
+- [x] Process management and round-robin scheduler (`create_process`, `yield`)
+- [x] User-mode execution (U-mode via `sret`)
+- [x] Virtio-blk device driver
+- [x] TAR-based in-memory filesystem with disk persistence
+- [x] Interactive shell (`hello`, `readfile`, `writefile`, `exit`)
+- [ ] Timer interrupts / preemption
+- [ ] Inter-process communication
+- [ ] Dynamic process creation from user space
+- [ ] Interrupt-driven I/O
+- [ ] Page reclamation / swap
 
 ## Source Structure
 
 ```
-common.c / .h  - Shared library (printf, memset, ...)
-kernel.c / .h  - Kernel core (processes, syscalls, drivers, fs)
-kernel.ld      - Kernel linker script
-shell.c        - Command-line shell
-user.c / .h    - User-space library and syscall wrappers
-user.ld        - User linker script
-run.sh         - Build + run script
-disk/          - File system contents
+common.c / .h      - Shared library (printf, memset, ...) — used by kernel and user
+kernel.h           - Cross-cutting kernel types, macros (PANIC, READ_CSR), shared structs
+kernel.ld          - Kernel linker script
+
+sbi.c / .h         - SBI console interface (putchar, getchar, sbi_call)
+mm.c / .h          - Physical allocator and SV32 paging (alloc_pages, map_page)
+trap.c / .h        - Trap entry and syscall dispatch (kernel_entry, handle_trap)
+proc.c / .h        - Process management and scheduler (create_process, yield)
+virtio.c / .h      - Virtio-blk device driver (virtio_blk_init, read_write_disk)
+fs.c / .h          - TAR filesystem (fs_init, fs_lookup, fs_flush)
+main.c             - Kernel entry point (kernel_main, boot)
+
+shell.c            - Interactive user-space shell
+user.c / .h        - User-space syscall wrappers (putchar, getchar, readfile, writefile)
+user.ld            - User linker script
+
+run.sh             - Build + run script (outputs to build/)
+disk/              - Filesystem contents (packed into build/disk.tar at build time)
+docs/              - Design notes and reference material
+build/             - All build artifacts (*.elf, *.bin, *.map, disk.tar, qemu.log)
 ```
 
 ## Prerequisites
@@ -47,7 +59,7 @@ sudo apt install clang lld qemu-system-misc
 ./run.sh
 ```
 
-Builds `kernel.elf` and launches it in QEMU. To exit, press `Ctrl-A X`.
+Compiles everything and launches `build/kernel.elf` in QEMU. To exit, press `Ctrl-A X`.
 
 ## OpenSBI
 
@@ -71,7 +83,7 @@ Firmware blobs are output to `build/platform/generic/firmware/`. Use `fw_jump.bi
 qemu-system-riscv32 -machine virt \
     -bios opensbi/build/platform/generic/firmware/fw_jump.bin \
     -nographic -serial mon:stdio --no-reboot \
-    -kernel kernel.elf
+    -kernel build/kernel.elf
 ```
 
 ## Formatting
